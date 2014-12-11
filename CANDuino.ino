@@ -4,10 +4,9 @@
 // CAN-BUS Shield: Meant for A123 Modules
 #include <SPI.h>
 
-#define MOD_CELL_UNDERVOLT 3
-#define MOD_CELL_OVERVOLT 2
-#define MOD_THERM_OFFSET -40
-#define MOD_V_OFFSET 1
+#include "a123_can_dfs.h"
+
+
 
 
 unsigned char Flag_Recv = 0;
@@ -48,6 +47,7 @@ void MCP2515_ISR()
      Flag_Recv = 1;
 }
 
+
 unsigned int getBits(int startBit, int length, unsigned char *buf) {
     unsigned int val = 0;
     unsigned char startBitByte = startBit / 8;
@@ -74,6 +74,7 @@ unsigned int getBits(int startBit, int length, unsigned char *buf) {
     return val;
 }
 
+// TODO - Get Working
 void setBits(int startBit, int length, unsigned char *buf, unsigned int data) {
     for (int i = 0; i < length; i++) {
         buf[(startBit + i)/8] = (buf[(startBit + i)/8] & ~(~(data & 1) << ((startBit + i) % 8)));
@@ -147,19 +148,19 @@ void loop() {
         // send data:  id = 0x00, standard flame, data len = 8, stmp: data buf
         switch (key1) {
             case 98: //b
-                CAN.sendMsgBuf(0x50, 0, 3, balance);
+                CAN.sendMsgBuf(BCM_CMD_ID, 0, 3, balance);
                 Serial.println("Sending Balance to 3.3V Message");
                 break;
             case 109: //m
-                CAN.sendMsgBuf(0x50, 0, 3, balance_e);
+                CAN.sendMsgBuf(BCM_CMD_ID, 0, 3, balance_e);
                 Serial.println("Sending Balance to 3.3V Message, Reqeusting Extended Response");            
                 break;
             case 110: //n
-                CAN.sendMsgBuf(0x50, 0, 3, no_balance);
+                CAN.sendMsgBuf(BCM_CMD_ID, 0, 3, no_balance);
                 Serial.println("Sending Do Not Balance Message");
                 break;
             case 101: //e
-                CAN.sendMsgBuf(0x50, 0, 3, no_balance_e);
+                CAN.sendMsgBuf(BCM_CMD_ID, 0, 3, no_balance_e);
                 Serial.println("Sending Do Not Balance Message, Reqeusting Extended Response");
                 break;
             default:
@@ -205,7 +206,3 @@ void loop() {
         unwritten_data = 0;
     }
 }
-
-/*********************************************************************************************************
-END FILE
-*********************************************************************************************************/
