@@ -74,11 +74,18 @@ unsigned int getBits(int startBit, int length, unsigned char *buf) {
     return val;
 }
 
-// TODO - Get Working
-void setBits(int startBit, int length, unsigned char *buf, unsigned int data) {
-    for (int i = 0; i < length; i++) {
-        buf[(startBit + i)/8] = (buf[(startBit + i)/8] & ~(~(data & 1) << ((startBit + i) % 8)));
-        data = data >> 1;
+void setBits(unsigned int startBit, unsigned int length, unsigned char *buf, unsigned int data) {
+    unsigned int endBit = startBit + length - 1;
+    for  (int i = 0; i < length; i++) {
+      unsigned maskedData = data & 1;
+      if (maskedData) {
+        unsigned char mask = maskedData << (7 - ((endBit - i) % 8));
+        buf[(endBit - i) / 8] = buf[(endBit - i) / 8] | mask;
+      } else {
+        unsigned char mask = ~(~maskedData << (7 - ((endBit - i) % 8)));
+        buf[(endBit - i) / 8] = buf[(endBit - i) / 8] & mask;
+      }
+      data = data >> 1;
     }
 }
 
