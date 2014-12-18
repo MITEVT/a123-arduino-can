@@ -15,7 +15,7 @@ unsigned char unwritten_data = 0;
 unsigned char len[8];
 long unsigned int id[8];
 unsigned char buf[64];
-unsigned char buffersUsed = 0;
+unsigned char buffersUsed = -1;
 
 unsigned char key = 0;
 
@@ -44,7 +44,15 @@ void setup() {
 
 void MCP2515_ISR()
 {
-     Flag_Recv = 1;
+    while (CAN_MSGAVAIL == CAN.checkReceive()) {
+    	buffersUsed += 1;
+    	if (buffersUsed > 7) {
+            Serial.print("Error");
+            buffersUsed -= 1;
+            break;
+        }
+        CAN.readMsgBufID(&id[buffersUsed], &len[buffersUsed], buf + 8 * buffersUsed);    // read data,  id: message id, len: data length, buf: data buf            
+    }
 }
 
 
@@ -167,42 +175,29 @@ void loop() {
                 Serial.println("Error: Command not defined");
         }  
     }
-    // If we get data write to buffer
-    if (Flag_Recv && !unwritten_data) {                   // check if get data
-        Flag_Recv = 0;
-        unwritten_data = 1;
-        buffersUsed = 0;
-        while (CAN_MSGAVAIL == CAN.checkReceive()) {
-            CAN.readMsgBufID(&id[buffersUsed], &len[buffersUsed], buf + 8 * buffersUsed);    // read data,  id: message id, len: data length, buf: data buf            
-            buffersUsed += 1;
-            if (buffersUsed > 7) {
-                Serial.print("Error");
-                break;
-            }
-        }
-    } else {
-        for (int i = 0 ; i < buffersUsed; i++) {
-            Serial.print("Message: ");
-            Serial.println(i);
-            Serial.print("ID: ");
-            Serial.print(id[i], HEX);
-            Serial.print("; Len: ");
-            Serial.print(len[i]);
-            unsigned char id_mod = id[i] >> 8;
-            if (id_mod == 0x2) {
-                Serial.println();
-                print200Message(buf + 8 * i);
-            } else if (id_mod == 0x3 || id_mod == 0x4 || id_mod == 0x5 || id_mod == 0x6) {
-                Serial.println();
-                printExtendedMessage((id_mod - 3) * 4, buf + 8 * i);
-            } else {
-                Serial.print("; Data: ");
-                for (int j = 0; j<len[i]; j++) {
-                    Serial.print(buf[j + (8 * i)], HEX);Serial.print("\t");
-                }
-            }
+    // if we have data in buffer
+    if (buffersUsed >= 0) {
+    	int i = buffersUsed;
+        Serial.print("Message: ");
+        Serial.println(i);
+        Serial.print("ID: ");
+        Serial.print(id[i], HEX);
+        Serial.print("; Len: ");
+        Serial.print(len[i]);
+        unsigned char id_mod = id[i] >> 8;
+        if (id_mod == 0x2) {
             Serial.println();
+            print200Message(buf + 8 * i);
+        } else if (id_mod == 0x3 || id_mod == 0x4 || id_mod == 0x5 || id_mod == 0x6) {
+            Serial.println();
+            printExtendedMessage((id_mod - 3) * 4, buf + 8 * i);
+        } else {
+            Serial.print("; Data: ");
+            for (int j = 0; j<len[i]; j++) {
+                Serial.print(buf[j + (8 * i)], HEX);Serial.print("\t");
+            }
         }
-        unwritten_data = 0;
+        Serial.println();
+        buffersUsed -= 1;
     }
 }
