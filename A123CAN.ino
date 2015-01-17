@@ -22,6 +22,8 @@ unsigned char key = 0;
 unsigned char no_balance[8] = {0, 0xFF, 0XF0, 0, 0, 0, 0, 0};
 unsigned char no_balance_e[8] = {0x01, 0xFF, 0XF0, 0, 0, 0, 0, 0};
 unsigned char balance[8] = {0, 0x8F, 0xC0, 0, 0, 0, 0, 0};
+unsigned char balance_32[8] = {0, 0x89, 0x80, 0, 0, 0, 0, 0};
+unsigned char balance_328[8] = {0, 0x8E, 0x80, 0, 0, 0, 0, 0};
 unsigned char balance_e[8] = {0x01, 0x8F, 0xC0, 0, 0, 0, 0, 0};
 unsigned char empty_message[8];
 
@@ -158,6 +160,14 @@ void loop() {
                 CAN.sendMsgBuf(BCM_CMD_ID, 0, 3, balance);
                 Serial.println("Sending Balance to 3.3V Message");
                 break;
+            case 'c':
+                CAN.sendMsgBuf(BCM_CMD_ID, 0, 3, balance_32);
+                Serial.println("Sending Balance to 3.2V Message");
+                break;
+            case 'd':
+                CAN.sendMsgBuf(BCM_CMD_ID, 0, 3, balance_328);
+                Serial.println("Sending Balance to 3.28V Message");
+                break;
             case 109: //m
                 CAN.sendMsgBuf(BCM_CMD_ID, 0, 3, balance_e);
                 Serial.println("Sending Balance to 3.3V Message, Reqeusting Extended Response");            
@@ -189,6 +199,8 @@ void loop() {
         }
     } else {
         for (int i = 0 ; i < buffersUsed; i++) {
+            Serial.print("Buffers Used: ");
+            Serial.println(buffersUsed);
             Serial.print("Message: ");
             Serial.println(i);
             Serial.print("ID: ");
@@ -210,6 +222,7 @@ void loop() {
             }
             Serial.println();
         }
+        buffersUsed = 0;
         unwritten_data = 0;
     }
 }
